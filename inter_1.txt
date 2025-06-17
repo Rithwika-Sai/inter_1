@@ -1,0 +1,43 @@
+# Sample code for data preprocessing import pandas as pd import numpy as np from sklearn.preprocessing import StandardScaler
+def preprocess_donor_data(data): # Handle missing values data = data.fillna({
+'Age': data['Age'].median(),
+'Previous_Donations': 0
+})
+# Create RFM features data['Recency'] = (data['Last_Donation_Date'].max() - data['Last_Donation_Date']).dt.days data['Frequency'] = data['Previous_Donations'] data['Time_Since_First'] = (data['Last_Donation_Date'] - data['First_Donation_Date']).dt.days
+# Normalize features scaler = StandardScaler() numeric_cols = ['Age', 'Recency', 'Frequency', 'Time_Since_Firs data[numeric_cols] = scaler.fit_transform(data[numeric_cols])
+return data
+# Sample code for model training from sklearn.ensemble import RandomForestClassifier from sklearn.linear_model import LogisticRegression from sklearn.model_selection import train_test_split, GridSearchCV from sklearn.metrics import accuracy_score, f1_score, confusion_mat
+def train_models(X, y):
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+X, y, test_size=0.2, random_state=42)
+# Train Random Forest rf_params = {
+'n_estimators': [100, 200, 300], 'max_depth': [None, 10, 20, 30],
+'min_samples_split': [2, 5, 10]
+} rf = RandomForestClassifier(random_state=42) rf_grid = GridSearchCV(rf, rf_params, cv=5, scoring='f1') rf_grid.fit(X_train, y_train)
+# Train Logistic Regression lr = LogisticRegression(max_iter=1000, random_state=42) lr.fit(X_train, y_train)
+# Return best models return {
+return {
+'random_forest': rf_grid.best_estimator_,
+'logistic_regression': lr
+}
+# Sample code for prediction module import joblib
+def predict_donation_probability(donor_data, model_path='rf_model.p
+# Load trained model model = joblib.load(model_path)
+# Preprocess input data processed_data = preprocess_donor_data(donor_data)
+# Make predictions feature_cols = ['Age', 'Recency', 'Frequency', 'Time_Since_Firs 'Blood_Type_O+', 'Blood_Type_A+', 'Blood_Type_B+ 'Blood_Type_AB+', 'Blood_Type_O-', 'Blood_Type_A
+'Blood_Type_B-', 'Blood_Type_AB-']
+probabilities = model.predict_proba(processed_data[feature_cols
+# Return donation probability return probabilities[:, 1]
+# Sample code for Streamlit dashboard import streamlit as st import pandas as pd import matplotlib.pyplot as plt import seaborn as sns
+def run_dashboard():
+st.title("Blood Donation Forecast Dashboard")
+# Sidebar for filters st.sidebar.header("Filters") min_prob = st.sidebar.slider("Minimum Donation Probability", 0. blood_type = st.sidebar.multiselect("Blood Type",
+["O+", "A+", "B+", "AB+", "O default=["O+", "A+"])
+# Load prediction data predictions_df = pd.read_csv("predictions.csv")
+# Filter data based on user selections filtered_df = predictions_df[
+(predictions_df["Donation_Probability"] >= min_prob) &
+(predictions_df["Blood_Type"].isin(blood_type))
+]
+# Display top donors st.header("High-Probability Donors") st.dataframe(filtered_df.sort_values(by="Donation_Probability", ascending=False).head(20))
+# Visualize probability distribution st.header("Donation Probability Distribution") fig, ax = plt.subplots(figsize=(10, 6)) sns.histplot(predictions_df["Donation_Probability"], bins=20, a st.pyplot(fig)
